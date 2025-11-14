@@ -1,6 +1,6 @@
 services:
   caddy:
-    image: docker.io/library/caddy:alpine
+    image: caddy:2.10.2
     container_name: caddy
     ports:
       - "80:80"

@@ -9,14 +9,12 @@ services:
     volumes:
       - ./jellyfin_config:/config
       - ./jellyfin_cache:/cache
-      - type: bind
-        source: ./media
-        target: /media
+      - ./media:/media
     restart: unless-stopped
     privileged: true
     network_mode: host
-    networks:
-      - reverse-proxy
+    # networks:
+    # - reverse-proxy
 
   radarr:
     container_name: radarr
@@ -28,19 +26,16 @@ services:
       - TZ=Etc/UTC
     volumes:
       - ./radarr_config:/config
-      - type: bind
-        source: ./media
-        target: /mnt/media
-      - type: bind
-        source: ./media/transmission/downloads
-        target: /downloads
+      - ./media:/media
+      - ./media/downloads:/downloads
     restart: unless-stopped
     networks:
+      - jellyfin
       - reverse-proxy
 
   sonarr:
     container_name: sonarr
-    image: ghcr.io/hotio/sonarr:release-4.0.4.1491
+    image: ghcr.io/hotio/sonarr:release-4.0.16.2944
     environment:
       - PUID=1000
       - PGID=1000
@@ -48,19 +43,16 @@ services:
       - TZ=Etc/UTC
     volumes:
       - ./sonarr_config:/config
-      - type: bind
-        source: ./media
-        target: /media
-      - type: bind
-        source: ./media/downloads/complete
-        target: /downloads
+      - ./media:/media
+      - ./media/downloads:/downloads
     restart: unless-stopped
     networks:
+      - jellyfin
       - reverse-proxy
 
   prowlarr:
     container_name: prowlarr
-    image: ghcr.io/hotio/prowlarr:release
+    image: ghcr.io/hotio/prowlarr:release-2.1.5.5216
     environment:
       - PUID=1000
       - PGID=1000
@@ -70,10 +62,11 @@ services:
       - ./prowlarr_config:/config
     restart: unless-stopped
     networks:
+      - jellyfin
       - reverse-proxy
 
   transmission:
-    image: lscr.io/linuxserver/transmission:latest
+    image: lscr.io/linuxserver/transmission:4.0.5
     container_name: transmission
     environment:
       - PUID=1000
@@ -82,16 +75,23 @@ services:
       - UMASK=002
     volumes:
       - ./transmission_config:/config
-      - type: bind
-        source: ./media/downloads/complete
-        target: /downloads/complete
-      - type: bind
-        source: ./media/downloads/incomplete
-        target: /downloads/incomplete
+      - ./media/downloads:/downloads
     restart: unless-stopped
     networks:
+      - jellyfin
+      - reverse-proxy
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:v3.4.5
+    container_name: flaresolverr
+    environment:
+      - TZ=Etc/UTC
+    restart: unless-stopped
+    networks:
+      - jellyfin
       - reverse-proxy
 
 networks:
+  jellyfin:
   reverse-proxy:
     external: true

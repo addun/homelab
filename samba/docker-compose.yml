@@ -1,6 +1,6 @@
 services:
   samba:
-    image: dockurr/samba
+    image: dockurr/samba:4.21
     container_name: samba
     restart: always
 

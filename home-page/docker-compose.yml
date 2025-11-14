@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: nginx:alpine
+    image: nginx:alpine3.22
     container_name: home-page
     volumes:
       - ./static:/usr/share/nginx/html:ro
