@@ -1,0 +1,16 @@
+services:
+  caddy:
+    image: docker.io/library/caddy:alpine
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: always
+    networks:
+      - reverse-proxy
+    volumes:
+      - ./conf:/etc/caddy
+
+networks:
+  reverse-proxy:
+    external: true

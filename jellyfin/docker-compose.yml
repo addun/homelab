@@ -1,0 +1,97 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:2025110305
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+    volumes:
+      - ./jellyfin_config:/config
+      - ./jellyfin_cache:/cache
+      - type: bind
+        source: ./media
+        target: /media
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    networks:
+      - reverse-proxy
+
+  radarr:
+    container_name: radarr
+    image: ghcr.io/hotio/radarr:release-5.28.0.10274
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=Etc/UTC
+    volumes:
+      - ./radarr_config:/config
+      - type: bind
+        source: ./media
+        target: /mnt/media
+      - type: bind
+        source: ./media/transmission/downloads
+        target: /downloads
+    restart: unless-stopped
+    networks:
+      - reverse-proxy
+
+  sonarr:
+    container_name: sonarr
+    image: ghcr.io/hotio/sonarr:release-4.0.4.1491
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=Etc/UTC
+    volumes:
+      - ./sonarr_config:/config
+      - type: bind
+        source: ./media
+        target: /media
+      - type: bind
+        source: ./media/downloads/complete
+        target: /downloads
+    restart: unless-stopped
+    networks:
+      - reverse-proxy
+
+  prowlarr:
+    container_name: prowlarr
+    image: ghcr.io/hotio/prowlarr:release
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - UMASK=002
+    volumes:
+      - ./prowlarr_config:/config
+    restart: unless-stopped
+    networks:
+      - reverse-proxy
+
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - UMASK=002
+    volumes:
+      - ./transmission_config:/config
+      - type: bind
+        source: ./media/downloads/complete
+        target: /downloads/complete
+      - type: bind
+        source: ./media/downloads/incomplete
+        target: /downloads/incomplete
+    restart: unless-stopped
+    networks:
+      - reverse-proxy
+
+networks:
+  reverse-proxy:
+    external: true

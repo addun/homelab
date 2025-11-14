@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Server Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .app-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .app-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .app-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .app-description {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .immich { background: linear-gradient(45deg, #4285f4, #34a853); }
+        .adguard { background: linear-gradient(45deg, #67b26f, #4ca2cd); }
+        .homeassistant { background: linear-gradient(45deg, #18bcf2, #2196f3); }
+        .portainer { background: linear-gradient(45deg, #13bef9, #0693d3); }
+        .filebrowser { background: linear-gradient(45deg, #f093fb, #f5576c); }
+
+        @media (max-width: 768px) {
+            .apps-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .app-card {
+                padding: 25px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Home Server Dashboard</h1>
+            <p>Your personal cloud services</p>
+        </div>
+
+        <div class="apps-grid">
+            <a href="http://photos.home.io" class="app-card">
+                <div class="app-icon immich">📸</div>
+                <div class="app-name">Immich</div>
+                <div class="app-description">Photo and video backup solution with AI-powered features</div>
+            </a>
+
+            <a href="http://dns.home.io" class="app-card">
+                <div class="app-icon adguard">🛡️</div>
+                <div class="app-name">AdGuard Home</div>
+                <div class="app-description">Network-wide ad & tracker blocking DNS server</div>
+            </a>
+
+            <a href="http://assistant.home.io" class="app-card">
+                <div class="app-icon homeassistant">🏡</div>
+                <div class="app-name">Home Assistant</div>
+                <div class="app-description">Open source home automation platform</div>
+            </a>
+
+            <a href="http://portainer.home.io" class="app-card">
+                <div class="app-icon portainer">🐳</div>
+                <div class="app-name">Portainer</div>
+                <div class="app-description">Docker container management made simple</div>
+            </a>
+
+            <a href="http://files.home.io" class="app-card">
+                <div class="app-icon filebrowser">📁</div>
+                <div class="app-name">File Browser</div>
+                <div class="app-description">Web-based file manager for your server</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,13 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: home-page
+    volumes:
+      - ./static:/usr/share/nginx/html:ro
+    restart: always
+    networks:
+      - reverse-proxy
+
+networks:
+  reverse-proxy:
+    external: true
