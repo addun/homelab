@@ -1,0 +1,15 @@
+# To create a symlink wirte:
+# sudo ln -s /path/to/my/app/ssh-vps-forward.service /etc/systemd/system/ssh-vps-forward.service
+
+[Unit]
+Description=Persistent SSH Connection to VPS
+After=network-online.target
+
+[Service]
+User=greenserver
+ExecStart=/usr/bin/autossh -o "UserKnownHostsFile /dev/null" -o "StrictHostKeyChecking no" -NR 20637:0.0.0.0:80 vps
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

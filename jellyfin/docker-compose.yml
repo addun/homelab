@@ -6,15 +6,18 @@ services:
       - PUID=1000
       - PGID=1000
       - UMASK=002
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    group_add:
+      - "992"
     volumes:
       - ./jellyfin_config:/config
       - ./jellyfin_cache:/cache
       - ./media:/media
     restart: unless-stopped
-    privileged: true
-    network_mode: host
-    # networks:
-    # - reverse-proxy
+    networks:
+      - arr
+      - reverse-proxy
 
   radarr:
     container_name: radarr
@@ -30,7 +33,7 @@ services:
       - ./media/downloads:/downloads
     restart: unless-stopped
     networks:
-      - jellyfin
+      - arr
       - reverse-proxy
 
   sonarr:
@@ -47,7 +50,7 @@ services:
       - ./media/downloads:/downloads
     restart: unless-stopped
     networks:
-      - jellyfin
+      - arr
       - reverse-proxy
 
   prowlarr:
@@ -62,7 +65,7 @@ services:
       - ./prowlarr_config:/config
     restart: unless-stopped
     networks:
-      - jellyfin
+      - arr
       - reverse-proxy
 
   transmission:
@@ -78,7 +81,7 @@ services:
       - ./media/downloads:/downloads
     restart: unless-stopped
     networks:
-      - jellyfin
+      - arr
       - reverse-proxy
 
   flaresolverr:
@@ -88,10 +91,25 @@ services:
       - TZ=Etc/UTC
     restart: unless-stopped
     networks:
-      - jellyfin
+      - arr
+      - reverse-proxy
+
+  seerr:
+    image: ghcr.io/seerr-team/seerr:2.7.3
+    container_name: seerr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=Etc/UTC
+    volumes:
+      - ./seerr_config:/app/config
+    restart: unless-stopped
+    networks:
+      - arr
       - reverse-proxy
 
 networks:
-  jellyfin:
+  arr:
   reverse-proxy:
     external: true

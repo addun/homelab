@@ -1,10 +1,17 @@
 services:
-  nginx:
-    image: nginx:alpine3.22
-    container_name: home-page
+  homepage:
+    image: ghcr.io/gethomepage/homepage:v1.7.0
+    container_name: homepage
+    env_file:
+      - .env
+    environment:
+      - HOMEPAGE_ALLOWED_HOSTS=*
+      - PUID=1000
+      - PGID=1000
     volumes:
-      - ./static:/usr/share/nginx/html:ro
-    restart: always
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config:/app/config
+    restart: unless-stopped
     networks:
       - reverse-proxy
 

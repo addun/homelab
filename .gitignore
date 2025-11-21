@@ -14,9 +14,20 @@ jellyfin/jellyfin_config
 jellyfin/media
 jellyfin/prowlarr_config
 jellyfin/radarr_config
+jellyfin/seerr_config
 jellyfin/sonarr_config
 jellyfin/transmission_config
 
 portainer/data
 
 samba/users.conf
+
+monitoring/grafana-data
+monitoring/prometheus-data
+
+home-page/config/logs
+
+authelia/authelia
+
+beszel/beszel_agent_data
+beszel/beszel_data

@@ -5,12 +5,18 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    restart: always
-    networks:
-      - reverse-proxy
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./conf:/etc/caddy
+    networks:
+      reverse-proxy: {}
+      monitoring:
+        ipv4_address: 172.23.0.3
 
 networks:
   reverse-proxy:
+    external: true
+  monitoring:
     external: true

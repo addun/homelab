@@ -1,0 +1,44 @@
+services:
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    container_name: prometheus
+    restart: unless-stopped
+    user: "1000:1000"
+    environment:
+      - PUID=1000
+      - PGID=1000
+    # container cannot connect to caddy unless we specify its IP here
+    # docker exec prometheus wget -O - http://caddy:2019
+    extra_hosts:
+      - "prometheus:172.23.0.2"
+      - "caddy:172.23.0.3"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-data:/prometheus
+    networks:
+      monitoring:
+        ipv4_address: 172.23.0.2
+
+  grafana:
+    image: grafana/grafana:12.1.4
+    container_name: grafana
+    restart: unless-stopped
+    user: "1000:1000"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - GF_SERVER_DOMAIN=grafana.home.io
+      - GF_SERVER_ROOT_URL=http://grafana.home.io/
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+    networks:
+      - reverse-proxy
+      - monitoring
+
+networks:
+  reverse-proxy:
+    external: true
+  monitoring:
+    external: true
