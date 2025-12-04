@@ -9,7 +9,7 @@ services:
       - ./config:/config
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
-    restart: always
+    restart: unless-stopped
     privileged: true
     network_mode: host
 

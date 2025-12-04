@@ -11,7 +11,8 @@ services:
     volumes:
       - ./conf:/etc/caddy
     networks:
-      reverse-proxy: {}
+      reverse-proxy:
+        ipv4_address: 172.18.0.15
       monitoring:
         ipv4_address: 172.23.0.3
 

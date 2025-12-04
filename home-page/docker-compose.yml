@@ -5,7 +5,7 @@ services:
     env_file:
       - .env
     environment:
-      - HOMEPAGE_ALLOWED_HOSTS=*
+      - HOMEPAGE_ALLOWED_HOSTS=home.io
       - PUID=1000
       - PGID=1000
     volumes:

@@ -1,5 +1,7 @@
-adguardhome/conf
 .env
+
+adguardhome/conf
+adguardhome/data
 
 file-browser/filebrowser_config
 file-browser/filebrowser_data
@@ -8,6 +10,8 @@ file-browser/filebrowser_database
 home-assistant/config
 
 immich/library
+immich/model-cache
+immich/postgres
 
 jellyfin/jellyfin_cache
 jellyfin/jellyfin_config
@@ -27,7 +31,8 @@ monitoring/prometheus-data
 
 home-page/config/logs
 
-authelia/authelia
+authelia/config
+authelia/redis
 
 beszel/beszel_agent_data
 beszel/beszel_data
