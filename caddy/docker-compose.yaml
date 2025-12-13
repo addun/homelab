@@ -4,7 +4,6 @@ services:
     container_name: caddy
     ports:
       - "80:80"
-      - "443:443"
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"

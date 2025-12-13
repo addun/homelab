@@ -1,0 +1,105 @@
+// Grafana Alloy configuration for Caddy log collection with GeoIP enrichment
+// Collects logs directly from Docker containers
+
+// Loki client configuration
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+// Discover Docker containers
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// Relabel to filter for Caddy container and set up log path
+discovery.relabel "caddy" {
+  targets = discovery.docker.containers.targets
+
+  // Only collect logs from Caddy container
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/caddy"
+    action        = "keep"
+  }
+
+  // Add container name as label
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    target_label  = "container"
+  }
+
+  // Add container ID
+  rule {
+    source_labels = ["__meta_docker_container_id"]
+    target_label  = "container_id"
+  }
+}
+
+// Tail Docker container logs
+loki.source.docker "caddy" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.caddy.output
+  forward_to = [loki.process.caddy_json.receiver]
+}
+
+// Process Caddy JSON logs and enrich with GeoIP
+loki.process "caddy_json" {
+  forward_to = [loki.write.default.receiver]
+
+  // Parse JSON log format from Caddy
+  stage.json {
+    expressions = {
+      level          = "level",
+      ts             = "ts",
+      request_uri    = "request.uri",
+      request_method = "request.method",
+      request_host   = "request.host",
+      request_proto  = "request.proto",
+      status         = "status",
+      duration       = "duration",
+      size           = "size",
+      remote_ip      = "request.remote_ip",
+      client_ip      = "request.client_ip",
+      user_agent     = "request.headers.User-Agent[0]",
+    }
+  }
+
+  // Add GeoIP enrichment using MaxMind database
+  stage.geoip {
+    source   = "client_ip"
+    db       = "/etc/geoip/GeoLite2-City.mmdb"
+    db_type  = "city"
+  }
+
+  // Add labels to the log entry (including GeoIP as labels)
+  stage.labels {
+    values = {
+      level                = "level",
+      request_host         = "request_host",
+      request_method       = "request_method",
+      status               = "status",
+      geoip_country_name   = "geoip_country_name",
+      geoip_city_name      = "geoip_city_name",
+      geoip_latitude       = "geoip_latitude",
+      geoip_longitude      = "geoip_longitude",
+      geoip_city_name      = "geoip_city_name",
+      job                  = "",
+    }
+  }
+
+  // Set static job label
+  stage.static_labels {
+    values = {
+      job = "caddy",
+    }
+  }
+
+  // Convert Unix timestamp
+  stage.timestamp {
+    source = "ts"
+    format = "Unix"
+  }
+}
+

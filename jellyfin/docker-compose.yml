@@ -95,7 +95,7 @@ services:
       - reverse-proxy
 
   seerr:
-    image: ghcr.io/seerr-team/seerr:2.7.3
+    image: ghcr.io/seerr-team/seerr:sha-15356df
     container_name: seerr
     environment:
       - PUID=1000
@@ -105,6 +105,21 @@ services:
     volumes:
       - ./seerr_config:/app/config
     restart: unless-stopped
+    networks:
+      - arr
+      - reverse-proxy
+
+  huntarr:
+    container_name: huntarr
+    image: ghcr.io/plexguide/huntarr:8.2.10
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=Etc/UTC
+    volumes:
+      - ./huntarr_config:/config
     networks:
       - arr
       - reverse-proxy

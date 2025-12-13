@@ -13,6 +13,7 @@ immich/library
 immich/model-cache
 immich/postgres
 
+jellyfin/huntarr_config
 jellyfin/jellyfin_cache
 jellyfin/jellyfin_config
 jellyfin/media
@@ -28,6 +29,9 @@ samba/users.conf
 
 monitoring/grafana-data
 monitoring/prometheus-data
+monitoring/loki-data
+monitoring/alloy-data
+monitoring/geoip
 
 home-page/config/logs
 

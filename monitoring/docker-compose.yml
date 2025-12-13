@@ -7,17 +7,11 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-    # container cannot connect to caddy unless we specify its IP here
-    # docker exec prometheus wget -O - http://caddy:2019
-    extra_hosts:
-      - "prometheus:172.23.0.2"
-      - "caddy:172.23.0.3"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus-data:/prometheus
     networks:
-      monitoring:
-        ipv4_address: 172.23.0.2
+      - monitoring
 
   grafana:
     image: grafana/grafana:12.1.4
@@ -35,6 +29,32 @@ services:
       - ./grafana-data:/var/lib/grafana
     networks:
       - reverse-proxy
+      - monitoring
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    user: "1000:1000"
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./loki/loki.yml:/etc/loki/loki.yml:ro
+      - ./loki-data:/loki
+    networks:
+      - monitoring
+
+  alloy:
+    image: grafana/alloy:v1.12.0
+    container_name: alloy
+    restart: unless-stopped
+    user: "1000:984" # User 1000 with docker group (984) to access Docker socket
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ./geoip:/etc/geoip:ro
+      - ./alloy-data:/var/lib/alloy
+    networks:
       - monitoring
 
 networks:
