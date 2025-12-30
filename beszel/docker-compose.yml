@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
     networks:
       - reverse-proxy
+      - beszel
 
   beszel-agent:
     image: henrygd/beszel-agent:0.16.1
@@ -24,8 +25,12 @@ services:
       LISTEN: 45876
       KEY: "${KEY}"
       TOKEN: "${TOKEN}"
-      HUB_URL: http://beszel.home.io
+      HUB_URL: http://beszel:8090
+    networks:
+      - beszel
 
 networks:
+  beszel:
+    driver: bridge
   reverse-proxy:
     external: true

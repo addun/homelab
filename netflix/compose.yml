@@ -1,0 +1,7 @@
+services:
+  netflix-household-autovalidator:
+    image: phd59fr/netflix-household-autovalidator@sha256:5c1900d6ddad04d6287267a58944f768420df41adbc005bdec9112ddb2236618
+    container_name: netflix-household-autovalidator
+    restart: unless-stopped
+    volumes:
+      - ./config.yml:/config.yaml

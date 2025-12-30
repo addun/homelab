@@ -51,11 +51,21 @@ services:
     command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ./alloy:/etc/alloy:ro
       - ./geoip:/etc/geoip:ro
       - ./alloy-data:/var/lib/alloy
     networks:
       - monitoring
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.0.2
+    container_name: uptime-kuma
+    restart: unless-stopped
+    user: "1000:1000"
+    volumes:
+      - ./uptime-kuma-data:/app/data
+    networks:
+      - reverse-proxy
 
 networks:
   reverse-proxy:

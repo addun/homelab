@@ -32,6 +32,7 @@ monitoring/prometheus-data
 monitoring/loki-data
 monitoring/alloy-data
 monitoring/geoip
+monitoring/uptime-kuma-data
 
 home-page/config/logs
 
@@ -40,3 +41,5 @@ authelia/redis
 
 beszel/beszel_agent_data
 beszel/beszel_data
+
+netflix/config.yml
