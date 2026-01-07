@@ -8,6 +8,8 @@ file-browser/filebrowser_data
 file-browser/filebrowser_database
 
 home-assistant/config
+home-assistant/mosquitto
+home-assistant/zigbee2mqtt-data
 
 immich/library
 immich/model-cache

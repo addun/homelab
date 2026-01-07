@@ -11,7 +11,9 @@ After=network-online.target
 
 [Service]
 User=greenserver
-ExecStart=/usr/bin/autossh -M 0 -N -R 127.0.0.1:8080:127.0.0.1:80 vps
+ExecStartPre=/usr/bin/bash -c 'until ss -ltn sport = :80; do sleep 2; done'
+ExecStartPre=/usr/bin/bash -c 'until ss -lun sport = :53; do sleep 2; done'
+ExecStart=/usr/bin/autossh -M 0 -N -o ExitOnForwardFailure=yes -R 127.0.0.1:8080:127.0.0.1:80 -R 127.0.0.1:2053:127.0.0.1:53 vps
 Restart=always
 RestartSec=5
 
