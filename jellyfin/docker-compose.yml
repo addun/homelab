@@ -126,5 +126,6 @@ services:
 
 networks:
   arr:
+    driver: bridge
   reverse-proxy:
-    external: true
+    name: reverse-proxy

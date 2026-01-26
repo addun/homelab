@@ -20,6 +20,7 @@ services:
     restart: unless-stopped
     ports:
       - "1883:1883"
+    user: 1000:1000
     environment:
       - PUID=1000
       - PGID=1000
@@ -29,7 +30,7 @@ services:
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
     networks:
-      - home-assistant
+      - assistant
 
   zigbee2mqtt:
     container_name: zigbee2mqtt
@@ -44,12 +45,23 @@ services:
       - ./zigbee2mqtt-data:/app/data
       - /run/udev:/run/udev:ro
     networks:
-      - home-assistant
+      - assistant
       - reverse-proxy
     devices:
       - /dev/serial/by-id/usb-Itead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_V2_e0ae5c5183f3ef11b798bb1b6d9880ab-if00-port0:/dev/ttyUSB0
 
+  esphome:
+    image: esphome/esphome:2025.12.5
+    container_name: esphome
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    volumes:
+      - ./esphome-config:/config
+      - /etc/localtime:/etc/localtime:ro
+
 networks:
   reverse-proxy:
-    external: true
-  home-assistant:
+    name: reverse-proxy
+  assistant:
+    driver: bridge

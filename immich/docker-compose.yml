@@ -12,7 +12,7 @@ services:
     depends_on:
       - redis
       - database
-    restart: unless
+    restart: unless-stopped
     healthcheck:
       disable: false
     networks:
@@ -24,7 +24,7 @@ services:
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION}
     env_file:
       - .env
-    restart: unless
+    restart: unless-stopped
     healthcheck:
       disable: false
     networks:
@@ -35,7 +35,7 @@ services:
     image: docker.io/valkey/valkey:8-bookworm@sha256:a137a2b60aca1a75130022d6bb96af423fefae4eb55faf395732db3544803280
     healthcheck:
       test: redis-cli ping || exit 1
-    restart: unless
+    restart: unless-stopped
     networks:
       - immich
 
@@ -50,12 +50,12 @@ services:
     volumes:
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
     shm_size: 128mb
-    restart: unless
+    restart: unless-stopped
     networks:
       - immich
 
 networks:
   reverse-proxy:
-    external: true
+    name: reverse-proxy
   immich:
-    internal: true
+    driver: bridge

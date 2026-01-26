@@ -68,7 +68,7 @@ services:
       - reverse-proxy
 
 networks:
-  reverse-proxy:
-    external: true
   monitoring:
-    external: true
+    name: monitoring
+  reverse-proxy:
+    name: reverse-proxy

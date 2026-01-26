@@ -1,7 +1,7 @@
 services:
   portainer:
     container_name: portainer
-    image: portainer/portainer-ce:2.33.1-alpine
+    image: portainer/portainer-ce:2.33.6-alpine
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
@@ -14,4 +14,4 @@ services:
 
 networks:
   reverse-proxy:
-    external: true
+    name: reverse-proxy

@@ -33,4 +33,4 @@ networks:
   beszel:
     driver: bridge
   reverse-proxy:
-    external: true
+    name: reverse-proxy
