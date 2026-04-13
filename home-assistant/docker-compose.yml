@@ -1,7 +1,7 @@
 services:
   homeassistant:
     container_name: homeassistant
-    image: "homeassistant/home-assistant:2025.11.2"
+    image: "homeassistant/home-assistant:2026.3.3"
     environment:
       - PUID=1000
       - PGID=1000
@@ -34,7 +34,7 @@ services:
 
   zigbee2mqtt:
     container_name: zigbee2mqtt
-    image: ghcr.io/koenkk/zigbee2mqtt:2.7.2
+    image: ghcr.io/koenkk/zigbee2mqtt:2.9.1
     restart: unless-stopped
     group_add:
       - dialout
@@ -51,7 +51,7 @@ services:
       - /dev/serial/by-id/usb-Itead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_V2_e0ae5c5183f3ef11b798bb1b6d9880ab-if00-port0:/dev/ttyUSB0
 
   esphome:
-    image: esphome/esphome:2025.12.5
+    image: esphome/esphome:2026.3.1
     container_name: esphome
     restart: unless-stopped
     network_mode: host

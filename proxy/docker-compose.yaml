@@ -13,9 +13,12 @@ services:
     networks:
       - reverse-proxy
       - monitoring
+      - nextcloud-aio
 
 networks:
   reverse-proxy:
     name: reverse-proxy
   monitoring:
     name: monitoring
+  nextcloud-aio:
+    name: nextcloud-aio
