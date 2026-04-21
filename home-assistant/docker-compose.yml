@@ -60,6 +60,22 @@ services:
       - ./esphome-config:/config
       - /etc/localtime:/etc/localtime:ro
 
+  ebusd:
+    image: john30/ebusd:v26.1
+    container_name: ebusd
+    restart: unless-stopped
+    networks:
+      - assistant
+    ports:
+      - 8888:8888
+    environment:
+      # - EBUSD_ENABLEHEX=
+      - EBUSD_DEVICE=ens:192.168.68.162:9999
+      - EBUSD_SCANCONFIG=full
+      - EBUSD_MQTTHOST=mosquitto
+      - EBUSD_MQTTPORT=1883
+      - EBUSD_MQTTJSON=
+
 networks:
   reverse-proxy:
     name: reverse-proxy

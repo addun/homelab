@@ -1,7 +1,10 @@
 services:
   caddy:
-    image: caddy:2.10.2
+    build:
+      context: .
+      target: caddy
     container_name: caddy
+    user: 1000:1000
     ports:
       - "80:80"
       - "443:443"
@@ -9,11 +12,36 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./conf:/etc/caddy
+      - ./caddy/conf:/etc/caddy
+      - ./caddy/logs:/var/log/caddy
+    depends_on:
+      - crowdsec
     networks:
       - reverse-proxy
       - monitoring
       - nextcloud-aio
+      - crowdsec
+    env_file:
+      - .env
+    security_opt:
+      - no-new-privileges=true
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:v1.7.7
+    container_name: crowdsec
+    environment:
+      - COLLECTIONS=crowdsecurity/caddy crowdsecurity/base-http-scenarios
+      - BOUNCER_KEY_CADDY=${CROWDSEC_API_KEY}
+    volumes:
+      - ./crowdsec/config:/etc/crowdsec
+      - ./crowdsec/data:/var/lib/crowdsec/data
+      - ./caddy/logs:/var/log/caddy:ro
+    networks:
+      - crowdsec
+      - monitoring
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges=true
 
 networks:
   reverse-proxy:
@@ -22,3 +50,5 @@ networks:
     name: monitoring
   nextcloud-aio:
     name: nextcloud-aio
+  crowdsec:
+    driver: bridge
