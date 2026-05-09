@@ -1,0 +1,9 @@
+services:
+  weekly-backup:
+    build:
+      context: .
+    container_name: weekly-backup
+    restart: unless-stopped
+    volumes:
+      - /home/greenserver/apps/immich/library:/source:ro
+      - /mnt/storage/backups/immich:/destination
