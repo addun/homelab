@@ -1,6 +1,6 @@
 services:
   homepage:
-    image: ghcr.io/gethomepage/homepage:v1.8.0
+    image: ghcr.io/gethomepage/homepage:v1.12.3
     container_name: homepage
     env_file:
       - .env
@@ -11,6 +11,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config:/app/config
+      - /mnt/storage:/mnt/storage:ro
     restart: unless-stopped
     networks:
       - reverse-proxy

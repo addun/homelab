@@ -1,6 +1,6 @@
 services:
   jellyfin:
-    image: jellyfin/jellyfin:2026032305
+    image: ghcr.io/jellyfin/jellyfin:10.11.8
     container_name: jellyfin
     environment:
       - PUID=1000
@@ -11,9 +11,9 @@ services:
     group_add:
       - "992"
     volumes:
-      - ./jellyfin_config:/config
-      - ./jellyfin_cache:/cache
-      - ./media:/media
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - /mnt/storage/media:/media
     restart: unless-stopped
     networks:
       - arr
@@ -28,9 +28,9 @@ services:
       - UMASK=002
       - TZ=Etc/UTC
     volumes:
-      - ./radarr_config:/config
-      - ./media:/media
-      - ./media/downloads:/downloads
+      - ./radarr/config:/config
+      - /mnt/storage/media:/media
+      - /mnt/storage/media/downloads:/downloads
     restart: unless-stopped
     networks:
       - arr
@@ -45,9 +45,9 @@ services:
       - UMASK=002
       - TZ=Etc/UTC
     volumes:
-      - ./sonarr_config:/config
-      - ./media:/media
-      - ./media/downloads:/downloads
+      - ./sonarr/config:/config
+      - /mnt/storage/media:/media
+      - /mnt/storage/media/downloads:/downloads
     restart: unless-stopped
     networks:
       - arr
@@ -62,23 +62,7 @@ services:
       - TZ=Etc/UTC
       - UMASK=002
     volumes:
-      - ./prowlarr_config:/config
-    restart: unless-stopped
-    networks:
-      - arr
-      - reverse-proxy
-
-  transmission:
-    image: lscr.io/linuxserver/transmission:4.1.1
-    container_name: transmission
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-      - UMASK=002
-    volumes:
-      - ./transmission_config:/config
-      - ./media/downloads:/downloads
+      - ./prowlarr/config:/config
     restart: unless-stopped
     networks:
       - arr
@@ -95,7 +79,7 @@ services:
       - reverse-proxy
 
   seerr:
-    image: ghcr.io/seerr-team/seerr:v3.1.0
+    image: ghcr.io/seerr-team/seerr:v3.2.0
     container_name: seerr
     environment:
       - PUID=1000
@@ -103,7 +87,7 @@ services:
       - UMASK=002
       - TZ=Etc/UTC
     volumes:
-      - ./seerr_config:/app/config
+      - ./seerr/config:/app/config
     restart: unless-stopped
     networks:
       - arr
@@ -119,10 +103,45 @@ services:
       - UMASK=002
       - TZ=Etc/UTC
     volumes:
-      - ./huntarr_config:/config
+      - ./huntarr/config:/config
     networks:
       - arr
       - reverse-proxy
+
+  transmission:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: arr-wireguard-client
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Warsaw
+    volumes:
+      - ./wireguard/config:/config
+      - /lib/modules:/lib/modules
+    restart: unless-stopped
+    networks:
+      - arr
+      - reverse-proxy
+
+  transmission-internal:
+    image: lscr.io/linuxserver/transmission:4.1.1
+    container_name: transmission
+    network_mode: "service:transmission"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - UMASK=002
+    volumes:
+      - ./transmission/config:/config
+      - /mnt/storage/media/downloads:/downloads
+    restart: unless-stopped
 
 networks:
   arr:

@@ -8,4 +8,6 @@
     tempmax: 100
     cpu: true
     memory: true
-    disk: /
+    disk:
+      - /
+      - /mnt/storage

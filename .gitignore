@@ -15,15 +15,14 @@ immich/library
 immich/model-cache
 immich/postgres
 
-jellyfin/huntarr_config
-jellyfin/jellyfin_cache
-jellyfin/jellyfin_config
-jellyfin/media
-jellyfin/prowlarr_config
-jellyfin/radarr_config
-jellyfin/seerr_config
-jellyfin/sonarr_config
-jellyfin/transmission_config
+arr/huntarr
+arr/jellyfin
+arr/prowlarr
+arr/radarr
+arr/seerr
+arr/sonarr
+arr/transmission
+arr/wireguard
 
 portainer/data
 

@@ -13,6 +13,8 @@ services:
       - redis
       - database
     restart: unless-stopped
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
     healthcheck:
       disable: false
     networks:
@@ -21,7 +23,7 @@ services:
 
   immich-machine-learning:
     container_name: immich_machine_learning
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION}
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION}-openvino
     env_file:
       - .env
     restart: unless-stopped
@@ -29,6 +31,11 @@ services:
       disable: false
     networks:
       - immich
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    dns:
+      - 127.0.0.11
+      - 8.8.8.8
 
   redis:
     container_name: immich_redis
@@ -58,4 +65,5 @@ networks:
   reverse-proxy:
     name: reverse-proxy
   immich:
+    name: immich
     driver: bridge

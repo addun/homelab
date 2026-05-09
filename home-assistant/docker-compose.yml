@@ -71,10 +71,10 @@ services:
     environment:
       # - EBUSD_ENABLEHEX=
       - EBUSD_DEVICE=ens:192.168.68.162:9999
-      - EBUSD_SCANCONFIG=full
       - EBUSD_MQTTHOST=mosquitto
       - EBUSD_MQTTPORT=1883
       - EBUSD_MQTTJSON=
+      - EBUSD_MQTTINT=/etc/ebusd/mqtt-hassio.cfg
 
 networks:
   reverse-proxy:
