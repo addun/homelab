@@ -4,6 +4,7 @@ services:
       context: .
     container_name: weekly-backup
     restart: unless-stopped
+    user: 1000:1000
     volumes:
       - /home/greenserver/apps/immich/library:/source:ro
       - /mnt/storage/backups/immich:/destination

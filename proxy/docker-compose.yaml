@@ -30,7 +30,7 @@ services:
     image: crowdsecurity/crowdsec:v1.7.7
     container_name: crowdsec
     environment:
-      - COLLECTIONS=crowdsecurity/caddy crowdsecurity/base-http-scenarios
+      - COLLECTIONS=crowdsecurity/caddy crowdsecurity/base-http-scenarios crowdsecurity/http-cve
       - BOUNCER_KEY_CADDY=${CROWDSEC_API_KEY}
     volumes:
       - ./crowdsec/config:/etc/crowdsec
@@ -39,6 +39,7 @@ services:
     networks:
       - crowdsec
       - monitoring
+      - email
     restart: unless-stopped
     security_opt:
       - no-new-privileges=true
@@ -52,3 +53,5 @@ networks:
     name: nextcloud-aio
   crowdsec:
     driver: bridge
+  email:
+    name: email

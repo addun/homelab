@@ -21,8 +21,8 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - GF_SERVER_DOMAIN=grafana.home.io
-      - GF_SERVER_ROOT_URL=http://grafana.home.io/
+      - GF_SERVER_DOMAIN=grafana.home.arpa
+      - GF_SERVER_ROOT_URL=http://grafana.home.arpa/
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     volumes:
