@@ -1,0 +1,40 @@
+services:
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:2.39.1-alpine
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./portainer/data:/data
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+    networks:
+      - reverse-proxy
+
+  wud:
+    container_name: wud
+    image: getwud/wud:8.2.2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./wud/store:/store
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Warsaw
+      - WUD_WATCHER_LOCAL_CRON=0 6 * * *
+      - WUD_TRIGGER_SMTP_MAIL_HOST=mail-proxy
+      - WUD_TRIGGER_SMTP_MAIL_PORT=25
+      - WUD_TRIGGER_SMTP_MAIL_FROM_ADDRESS=${WUD_FROM_ADDRESS}
+      - WUD_TRIGGER_SMTP_MAIL_FROM_NAME=WUD
+      - WUD_TRIGGER_SMTP_MAIL_TO=${WUD_TO}
+      - WUD_TRIGGER_SMTP_MAIL_TLS_ENABLED=false
+      - WUD_TRIGGER_SMTP_MAIL_MODE=batch
+    networks:
+      - reverse-proxy
+      - email
+
+networks:
+  reverse-proxy:
+    name: reverse-proxy
+  email:
+    name: email

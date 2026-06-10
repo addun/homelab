@@ -24,9 +24,8 @@ arr/sonarr
 arr/transmission
 arr/wireguard
 
-portainer/data
-
-samba/users.conf
+ops/wud
+ops/portainer
 
 monitoring/grafana-data
 monitoring/prometheus-data

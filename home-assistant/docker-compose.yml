@@ -1,7 +1,10 @@
 services:
   homeassistant:
     container_name: homeassistant
-    image: "homeassistant/home-assistant:2026.3.3"
+    image: "homeassistant/home-assistant:2026.6.2"
+    labels:
+      # Skip any tag containing "dev" (e.g. 2026.7.0.dev202606090319).
+      - wud.tag.exclude=dev
     environment:
       - PUID=1000
       - PGID=1000
