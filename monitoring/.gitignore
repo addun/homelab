@@ -1,0 +1,6 @@
+grafana-data
+prometheus-data
+loki-data
+alloy-data
+geoip
+uptime-kuma-data
