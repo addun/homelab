@@ -2,6 +2,8 @@ services:
   homeassistant:
     container_name: homeassistant
     image: "homeassistant/home-assistant:2026.6.2"
+    # ports:
+    # - "8123:8123"
     labels:
       # Skip any tag containing "dev" (e.g. 2026.7.0.dev202606090319).
       - wud.tag.exclude=dev
@@ -19,6 +21,9 @@ services:
 
   mosquitto:
     image: eclipse-mosquitto:2.0.22
+    labels:
+      # Only track the -alpine variant; ignore plain tags.
+      - wud.tag.include=^\d+\.\d+\.\d+-alpine$$
     container_name: mosquitto
     restart: unless-stopped
     ports:
@@ -55,6 +60,9 @@ services:
 
   esphome:
     image: esphome/esphome:2026.3.1
+    labels:
+      # Stable X.Y.Z only; skip dev builds and prereleases like 2026.6.0b1.
+      - wud.tag.include=^\d+\.\d+\.\d+$$
     container_name: esphome
     restart: unless-stopped
     network_mode: host

@@ -15,6 +15,9 @@ services:
 
   grafana:
     image: grafana/grafana:12.1.4
+    labels:
+      # Stable X.Y.Z only; ignore -ubuntu / build-number variants.
+      - wud.tag.include=^\d+\.\d+\.\d+$$
     container_name: grafana
     restart: unless-stopped
     user: "1000:1000"
@@ -45,6 +48,9 @@ services:
 
   alloy:
     image: grafana/alloy:v1.12.0
+    labels:
+      # Only track clean vX.Y.Z releases; ignore rc / -ubuntu / -windows builds.
+      - wud.tag.include=^v\d+\.\d+\.\d+$$
     container_name: alloy
     restart: unless-stopped
     user: "1000:984" # User 1000 with docker group (984) to access Docker socket
