@@ -1,7 +1,7 @@
 services:
   portainer:
     container_name: portainer
-    image: portainer/portainer-ce:2.39.1-alpine
+    image: portainer/portainer-ce:2.42.0-alpine
     labels:
       # Only track the -alpine variant; ignore plain tags like 2.42.0.
       - wud.tag.include=^\d+\.\d+\.\d+-alpine$$

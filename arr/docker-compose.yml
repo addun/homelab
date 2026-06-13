@@ -1,6 +1,6 @@
 services:
   jellyfin:
-    image: ghcr.io/jellyfin/jellyfin:10.11.8
+    image: ghcr.io/jellyfin/jellyfin:10.11.11
     container_name: jellyfin
     environment:
       - PUID=1000
@@ -21,7 +21,7 @@ services:
 
   radarr:
     container_name: radarr
-    image: ghcr.io/hotio/radarr:release-6.0.4.10291
+    image: ghcr.io/hotio/radarr:release-6.2.1.10461
     environment:
       - PUID=1000
       - PGID=1000
@@ -55,7 +55,7 @@ services:
 
   prowlarr:
     container_name: prowlarr
-    image: ghcr.io/hotio/prowlarr:release-2.3.0.5236
+    image: ghcr.io/hotio/prowlarr:release-2.4.0.5397
     environment:
       - PUID=1000
       - PGID=1000
@@ -69,7 +69,7 @@ services:
       - reverse-proxy
 
   flaresolverr:
-    image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
+    image: ghcr.io/flaresolverr/flaresolverr:v3.5.0
     container_name: flaresolverr
     environment:
       - TZ=Etc/UTC
@@ -79,7 +79,7 @@ services:
       - reverse-proxy
 
   seerr:
-    image: ghcr.io/seerr-team/seerr:v3.2.0
+    image: ghcr.io/seerr-team/seerr:v3.3.0
     container_name: seerr
     environment:
       - PUID=1000

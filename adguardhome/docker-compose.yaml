@@ -1,7 +1,7 @@
 services:
   adguardhome:
     container_name: adguardhome
-    image: adguard/adguardhome:v0.107.74
+    image: adguard/adguardhome:v0.107.77
     labels:
       # Stable vX.Y.Z only; skip beta tags like v0.108.0-b.88.
       - wud.tag.include=^v\d+\.\d+\.\d+$$

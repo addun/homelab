@@ -1,6 +1,6 @@
 services:
   prometheus:
-    image: prom/prometheus:v3.7.3
+    image: prom/prometheus:v3.12.0
     container_name: prometheus
     restart: unless-stopped
     user: "1000:1000"
@@ -14,7 +14,7 @@ services:
       - monitoring
 
   grafana:
-    image: grafana/grafana:12.1.4
+    image: grafana/grafana:13.0.2
     labels:
       # Stable X.Y.Z only; ignore -ubuntu / build-number variants.
       - wud.tag.include=^\d+\.\d+\.\d+$$
@@ -28,6 +28,8 @@ services:
       - GF_SERVER_ROOT_URL=http://grafana.home.arpa/
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
     volumes:
       - ./grafana-data:/var/lib/grafana
     networks:
@@ -47,7 +49,7 @@ services:
       - monitoring
 
   alloy:
-    image: grafana/alloy:v1.12.0
+    image: grafana/alloy:v1.16.3
     labels:
       # Only track clean vX.Y.Z releases; ignore rc / -ubuntu / -windows builds.
       - wud.tag.include=^v\d+\.\d+\.\d+$$
@@ -64,7 +66,7 @@ services:
       - monitoring
 
   uptime-kuma:
-    image: louislam/uptime-kuma:2.0.2
+    image: louislam/uptime-kuma:2.4.0
     container_name: uptime-kuma
     restart: unless-stopped
     user: "1000:1000"

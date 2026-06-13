@@ -27,7 +27,7 @@ services:
       - no-new-privileges=true
 
   crowdsec:
-    image: crowdsecurity/crowdsec:v1.7.7
+    image: crowdsecurity/crowdsec:v1.7.8
     container_name: crowdsec
     environment:
       - COLLECTIONS=crowdsecurity/caddy crowdsecurity/base-http-scenarios crowdsecurity/http-cve

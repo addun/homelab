@@ -20,7 +20,7 @@ services:
     network_mode: host
 
   mosquitto:
-    image: eclipse-mosquitto:2.0.22
+    image: eclipse-mosquitto:2.1.2-alpine
     labels:
       # Only track the -alpine variant; ignore plain tags.
       - wud.tag.include=^\d+\.\d+\.\d+-alpine$$
@@ -42,7 +42,7 @@ services:
 
   zigbee2mqtt:
     container_name: zigbee2mqtt
-    image: ghcr.io/koenkk/zigbee2mqtt:2.9.1
+    image: ghcr.io/koenkk/zigbee2mqtt:2.12.0
     restart: unless-stopped
     group_add:
       - dialout
@@ -59,7 +59,7 @@ services:
       - /dev/serial/by-id/usb-Itead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_V2_e0ae5c5183f3ef11b798bb1b6d9880ab-if00-port0:/dev/ttyUSB0
 
   esphome:
-    image: esphome/esphome:2026.3.1
+    image: esphome/esphome:2026.5.3
     labels:
       # Stable X.Y.Z only; skip dev builds and prereleases like 2026.6.0b1.
       - wud.tag.include=^\d+\.\d+\.\d+$$
