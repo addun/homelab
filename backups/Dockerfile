@@ -1,13 +1,11 @@
+FROM golang:1.23-alpine AS build
+WORKDIR /src
+COPY go.mod ./
+COPY main.go ./
+RUN CGO_ENABLED=0 go build -trimpath -o /backup .
+
 FROM alpine:latest
-
-RUN apk add --no-cache tar gzip pv
-
-COPY backup.sh /usr/local/bin/backup.sh
-
-RUN chmod +x /usr/local/bin/backup.sh
-
-# Sunday at 00:00
-RUN echo "0 0 * * 0 /usr/local/bin/backup.sh" > /etc/crontabs/root
-
-# Run the cron daemon
-CMD ["crond", "-f", "-l", "2"]
+RUN apk add --no-cache tzdata
+COPY --from=build /backup /usr/local/bin/backup
+USER 1000:1000
+ENTRYPOINT ["/usr/local/bin/backup"]

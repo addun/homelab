@@ -13,6 +13,7 @@ services:
       - UMASK=002
     volumes:
       - ./config:/config
+      - ./media:/media
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
     restart: unless-stopped
@@ -85,7 +86,25 @@ services:
       - EBUSD_MQTTHOST=mosquitto
       - EBUSD_MQTTPORT=1883
       - EBUSD_MQTTJSON=
+      - EBUSD_MQTTRETAIN=
+      - EBUSD_ENABLEDEFINE=
       - EBUSD_MQTTINT=/etc/ebusd/mqtt-hassio.cfg
+
+  ebusd-define:
+    image: john30/ebusd:v26.1
+    container_name: ebusd-define
+    restart: unless-stopped
+    depends_on:
+      - ebusd
+    networks:
+      - assistant
+    environment:
+      - EBUSD_HOST=ebusd
+      - EBUSD_PORT=8888
+      - CHECK_INTERVAL=30
+    volumes:
+      - ./ebusd/ebusd-define.sh:/ebusd-define.sh:ro
+    entrypoint: ["/bin/sh", "/ebusd-define.sh"]
 
 networks:
   reverse-proxy:

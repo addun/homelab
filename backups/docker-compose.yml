@@ -5,6 +5,20 @@ services:
     container_name: weekly-backup
     restart: unless-stopped
     user: 1000:1000
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Warsaw
+      - MAIL_HOST=mail-proxy
+      - MAIL_PORT=25
+      - MAIL_FROM=homelab-backup
+      - MAIL_TO=${MAIL_TO}
     volumes:
       - /home/greenserver/apps/immich/library:/source:ro
       - /mnt/storage/backups/immich:/destination
+    networks:
+      - email
+
+networks:
+  email:
+    name: email
