@@ -12,8 +12,8 @@ services:
       - PGID=1000
       - UMASK=002
     volumes:
-      - ./config:/config
-      - ./media:/media
+      - ./home-assistant/config:/config
+      - ./home-assistant/media:/media
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
     restart: unless-stopped
@@ -51,7 +51,7 @@ services:
     environment:
       - TZ=Europe/Warsaw
     volumes:
-      - ./zigbee2mqtt-data:/app/data
+      - ./zigbee2mqtt/data:/app/data
       - /run/udev:/run/udev:ro
     networks:
       - assistant
@@ -69,7 +69,7 @@ services:
     network_mode: host
     privileged: true
     volumes:
-      - ./esphome-config:/config
+      - ./esphome/config:/config
       - /etc/localtime:/etc/localtime:ro
 
   ebusd:

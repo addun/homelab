@@ -1,0 +1,4 @@
+home-assistant/config
+home-assistant/media
+mosquitto
+zigbee2mqtt/data
