@@ -1,7 +1,7 @@
 services:
   immich-server:
     container_name: immich
-    image: ghcr.io/immich-app/immich-server:v2.7.5
+    image: ghcr.io/immich-app/immich-server:v3.0.2
     volumes:
       - ./library:/data
       - /etc/localtime:/etc/localtime:ro
@@ -23,7 +23,7 @@ services:
 
   immich-machine-learning:
     container_name: immich_machine_learning
-    image: ghcr.io/immich-app/immich-machine-learning:v2.7.5-openvino
+    image: ghcr.io/immich-app/immich-machine-learning:v3.0.2-openvino
     labels:
       # Stay on the OpenVINO variant; ignore plain vX.Y.Z tags.
       - wud.tag.include=^v\d+\.\d+\.\d+-openvino$$

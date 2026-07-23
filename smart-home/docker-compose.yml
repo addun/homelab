@@ -1,7 +1,7 @@
 services:
   homeassistant:
     container_name: homeassistant
-    image: "homeassistant/home-assistant:2026.6.2"
+    image: "homeassistant/home-assistant:2026.7.2"
     # ports:
     # - "8123:8123"
     labels:
@@ -60,7 +60,7 @@ services:
       - /dev/serial/by-id/usb-Itead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_V2_e0ae5c5183f3ef11b798bb1b6d9880ab-if00-port0:/dev/ttyUSB0
 
   esphome:
-    image: esphome/esphome:2026.5.3
+    image: esphome/esphome:2026.6.5
     labels:
       # Stable X.Y.Z only; skip dev builds and prereleases like 2026.6.0b1.
       - wud.tag.include=^\d+\.\d+\.\d+$$

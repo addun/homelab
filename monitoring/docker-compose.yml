@@ -56,7 +56,7 @@ services:
     container_name: alloy
     restart: unless-stopped
     user: "1000:984" # User 1000 with docker group (984) to access Docker socket
-    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    command: run --disable-reporting --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./alloy:/etc/alloy:ro

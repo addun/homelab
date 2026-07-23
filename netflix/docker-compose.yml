@@ -1,6 +1,6 @@
 services:
   netflix-household-autovalidator:
-    image: phd59fr/netflix-household-autovalidator@sha256:1dc980171bb254b1e8707b466d404a976cde2b254c1350933f9da50649413fdd
+    image: phd59fr/netflix-household-autovalidator@sha256:63612185a77e6b4f5d30709ffee37eebfbdb6aa8f2e82264be7cda5d21e5441a
     container_name: netflix-household-autovalidator
     restart: unless-stopped
     volumes:
