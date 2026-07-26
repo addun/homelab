@@ -1,3 +1,4 @@
 .env
 
 sandbox
+.tools/vps-caddy/vps-caddy-file
