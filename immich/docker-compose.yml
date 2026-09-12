@@ -1,7 +1,7 @@
 services:
   immich-server:
     container_name: immich
-    image: ghcr.io/immich-app/immich-server:v3.0.2
+    image: ghcr.io/immich-app/immich-server:v3.2.0
     volumes:
       - ./library:/data
       - /etc/localtime:/etc/localtime:ro
@@ -23,7 +23,7 @@ services:
 
   immich-machine-learning:
     container_name: immich_machine_learning
-    image: ghcr.io/immich-app/immich-machine-learning:v3.0.2-openvino
+    image: ghcr.io/immich-app/immich-machine-learning:v3.2.0-openvino
     labels:
       # Stay on the OpenVINO variant; ignore plain vX.Y.Z tags.
       - wud.tag.include=^v\d+\.\d+\.\d+-openvino$$
@@ -61,6 +61,38 @@ services:
       - ./postgres:/var/lib/postgresql/data
     shm_size: 128mb
     restart: unless-stopped
+    networks:
+      - immich
+
+  immich-deduper:
+    container_name: immich-deduper
+    image: razgrizhsu/immich-deduper:0.3.3
+    env_file:
+      - .env
+    environment:
+      PSQL_HOST: database
+      PSQL_PORT: 5432
+      PSQL_DB: ${DB_DATABASE_NAME}
+      PSQL_USER: ${DB_USERNAME}
+      PSQL_PASS: ${DB_PASSWORD}
+    volumes:
+      - ./deduper/data:/app/data
+      - ./deduper/cache:/root/.cache/torch/
+      - ./library:/immich:ro
+    depends_on:
+      - immich-deduper-qdrant
+      - database
+    restart: unless-stopped
+    networks:
+      - reverse-proxy
+      - immich
+
+  immich-deduper-qdrant:
+    container_name: immich-deduper-qdrant
+    image: qdrant/qdrant:v1.19.1
+    restart: unless-stopped
+    volumes:
+      - ./deduper/qdrant:/qdrant/storage
     networks:
       - immich
 
