@@ -1,0 +1,17 @@
+services:
+  pingvin-share-x:
+    image: smp46/pingvin-share-x:v1.22.1
+    container_name: pingvin-share-x
+    restart: unless-stopped
+    environment:
+      - TRUST_PROXY=true
+    volumes:
+      - "./pingvin-share-x/data:/opt/app/backend/data:rw,z"
+      - "./pingvin-share-x/images:/opt/app/frontend/public/img:rw,z"
+      - "./pingvin-share-x/config.yaml:/opt/app/config.yaml"
+    networks:
+      - reverse-proxy
+
+networks:
+  reverse-proxy:
+    name: reverse-proxy
