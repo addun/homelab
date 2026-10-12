@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-docker exec weekly-backup /usr/local/bin/backup once
+docker exec backup /usr/local/bin/backup once

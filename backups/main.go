@@ -1,39 +1,48 @@
-// Weekly backup of the Immich library: tar + gzip the source tree into a single
-// archive, then notify by e-mail. On any failure it sends a [FAILED] mail; on
-// success a [OK] heartbeat (so you also notice if the service itself ever dies).
+// Daily restic backup of the homelab: Immich database dump + the whole apps tree
+// into a deduplicated, encrypted restic repository, with retention and a
+// [OK]/[FAILED] e-mail after every run (so you also notice if the service dies).
 //
-// Self-contained: no external tools (tar/gzip/pv/msmtp) and no cron. The process
-// stays alive and schedules itself for every Sunday 00:00 in TZ.
-//
-// Run "backup once" to perform a single backup immediately and exit (useful for
-// testing or an ad-hoc run).
+// Self-contained scheduler: the process stays alive and wakes up every day at
+// RUN_AT (default 03:00) in TZ. Run "backup once" to perform a single backup now.
 package main
 
 import (
-	"archive/tar"
-	"compress/gzip"
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/smtp"
 	"os"
-	"path/filepath"
+	"os/exec"
+	"strings"
 	"time"
 )
 
-// Configuration, all overridable via environment variables.
 var (
-	sourceDir = env("SOURCE_DIR", "/source")
-	destDir   = env("DEST_DIR", "/destination")
-	mailHost  = env("MAIL_HOST", "mail-proxy")
-	mailPort  = env("MAIL_PORT", "25")
-	mailFrom  = env("MAIL_FROM", "homelab-backup")
-	mailTo    = env("MAIL_TO", "")
-	tz        = env("TZ", "UTC")
+	sourceDir   = env("SOURCE_DIR", "/apps")
+	mailHost    = env("MAIL_HOST", "mail-proxy")
+	mailPort    = env("MAIL_PORT", "25")
+	mailFrom    = env("MAIL_FROM", "homelab-backup")
+	mailTo      = env("MAIL_TO", "")
+	tz          = env("TZ", "UTC")
+	runAt       = env("RUN_AT", "03:00")
+	dbContainer = env("DB_CONTAINER", "immich_postgres")
 )
 
-const archiveName = "latest_backup.tar.gz"
+// Paths (relative to sourceDir) that are not worth backing up: raw Postgres files
+// (covered by the dump instead), caches and regenerable metrics/index data.
+var excludes = []string{
+	"immich/postgres",
+	"immich/deduper/cache",
+	"immich/deduper/qdrant",
+	"arr/jellyfin/cache",
+	"monitoring/prometheus-data",
+	"monitoring/loki-data",
+	"backups/cache",
+	"sandbox",
+}
 
 func env(key, def string) string {
 	if v := os.Getenv(key); v != "" {
@@ -47,8 +56,10 @@ func main() {
 	if mailTo == "" {
 		log.Fatal("MAIL_TO is not set")
 	}
+	if os.Getenv("RESTIC_PASSWORD") == "" {
+		log.Fatal("RESTIC_PASSWORD is not set")
+	}
 
-	// Single ad-hoc run: "backup once".
 	if len(os.Args) > 1 && os.Args[1] == "once" {
 		runBackup()
 		return
@@ -59,173 +70,147 @@ func main() {
 		log.Printf("unknown TZ %q, falling back to UTC: %v", tz, err)
 		loc = time.UTC
 	}
+	hh, mm := 3, 0
+	if _, err := fmt.Sscanf(runAt, "%d:%d", &hh, &mm); err != nil {
+		log.Fatalf("bad RUN_AT %q (want HH:MM): %v", runAt, err)
+	}
 
-	log.Printf("Backup service started. source=%s dest=%s tz=%s", sourceDir, destDir, tz)
+	log.Printf("Backup service started. source=%s tz=%s at=%s", sourceDir, tz, runAt)
 	for {
 		now := time.Now().In(loc)
-		next := nextSunday(now)
+		next := time.Date(now.Year(), now.Month(), now.Day(), hh, mm, 0, 0, loc)
+		if !next.After(now) {
+			next = next.AddDate(0, 0, 1)
+		}
 		log.Printf("Next backup: %s (in %s)", next.Format(time.RFC1123), next.Sub(now).Truncate(time.Minute))
 		time.Sleep(next.Sub(now))
 		runBackup()
 	}
 }
 
-// nextSunday returns the next Sunday 00:00 strictly after now.
-func nextSunday(now time.Time) time.Time {
-	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	daysUntil := (7 - int(now.Weekday())) % 7 // time.Sunday == 0
-	next := midnight.AddDate(0, 0, daysUntil)
-	if !next.After(now) {
-		next = next.AddDate(0, 0, 7)
-	}
-	return next
-}
-
 func runBackup() {
 	start := time.Now()
-	dest := filepath.Join(destDir, archiveName)
-	tmp := dest + ".tmp"
 	day := start.Format("2006-01-02")
 	log.Println("Backup started")
 
-	// Log periodic progress by watching the growing temp file.
-	stop := make(chan struct{})
-	go logProgress(tmp, stop)
+	var report strings.Builder
+	fail := func(step string, err error) {
+		log.Printf("ERROR: %s: %v", step, err)
+		sendMail("[FAILED] Homelab backup "+day, fmt.Sprintf(
+			"The homelab backup FAILED at step %q:\n\n%v\n\n%s\nInspect the logs:\n    docker logs backup", step, err, report.String()))
+	}
 
-	err := createArchive(tmp)
-	close(stop)
+	if err := ensureRepo(); err != nil {
+		fail("repo init", err)
+		return
+	}
+
+	if out, err := backupDatabase(); err != nil {
+		fail("database dump", err)
+		return
+	} else {
+		report.WriteString("== database ==\n" + out + "\n")
+	}
+
+	// Exit code 3 = snapshot created but some files unreadable; treat as a warning.
+	args := []string{"backup", sourceDir, "--tag", "files", "--host", "homelab"}
+	for _, e := range excludes {
+		args = append(args, "--exclude", sourceDir+"/"+e)
+	}
+	out, err := restic(nil, args...)
+	var ee *exec.ExitError
+	if err != nil && !(errors.As(err, &ee) && ee.ExitCode() == 3) {
+		fail("files backup", fmt.Errorf("%v\n%s", err, out))
+		return
+	}
+	warn := ""
 	if err != nil {
-		os.Remove(tmp)
-		log.Printf("ERROR: %v", err)
-		sendMail("[FAILED] Immich backup "+day, fmt.Sprintf(
-			"The weekly Immich backup FAILED:\n\n%v\n\nInspect the logs:\n    docker logs weekly-backup", err))
+		warn = "WARNING: some files could not be read (see logs).\n"
+	}
+	report.WriteString("== files ==\n" + warn + tail(out, 8) + "\n")
+
+	if out, err := restic(nil, "forget", "--prune", "--host", "homelab",
+		"--keep-daily", "7", "--keep-weekly", "4", "--keep-monthly", "6"); err != nil {
+		fail("retention", fmt.Errorf("%v\n%s", err, out))
 		return
+	} else {
+		report.WriteString("== retention ==\n" + tail(out, 4) + "\n")
 	}
 
-	// Only replace the previous (good) archive once the new one is complete.
-	if err := os.Rename(tmp, dest); err != nil {
-		os.Remove(tmp)
-		log.Printf("ERROR: rename: %v", err)
-		sendMail("[FAILED] Immich backup "+day, fmt.Sprintf(
-			"Backup was created but could not replace the previous file:\n\n%v", err))
+	// Structure check plus a random 2% sample of the actual data each run.
+	if out, err := restic(nil, "check", "--read-data-subset=2%"); err != nil {
+		fail("integrity check", fmt.Errorf("%v\n%s", err, out))
 		return
 	}
+	report.WriteString("== check == ok\n")
 
-	size := humanSize(fileSize(dest))
 	dur := time.Since(start).Truncate(time.Second)
-	log.Printf("Backup finished: %s in %s", size, dur)
-	sendMail("[OK] Immich backup "+day, fmt.Sprintf(
-		"Weekly Immich backup completed successfully.\nSize: %s\nDuration: %s", size, dur))
+	log.Printf("Backup finished in %s", dur)
+	sendMail("[OK] Homelab backup "+day, fmt.Sprintf("Homelab backup completed successfully.\nDuration: %s\n\n%s", dur, report.String()))
 }
 
-// createArchive walks sourceDir and writes a gzip-compressed tar to tmpPath.
-// Files that vanish mid-walk (Immich is live) are skipped rather than failing.
-func createArchive(tmpPath string) error {
-	f, err := os.Create(tmpPath)
+// ensureRepo initialises the restic repository on first run.
+func ensureRepo() error {
+	if _, err := restic(nil, "cat", "config"); err == nil {
+		return nil
+	}
+	log.Println("Initialising restic repository")
+	out, err := restic(nil, "init")
 	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	gz := gzip.NewWriter(f)
-	tw := tar.NewWriter(gz)
-
-	skipped := 0
-	walkErr := filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			// Disappeared between listing and visiting, or not readable by us.
-			if os.IsNotExist(err) || os.IsPermission(err) {
-				log.Printf("skip %s: %v", path, err)
-				skipped++
-				return nil
-			}
-			return err
-		}
-		rel, err := filepath.Rel(sourceDir, path)
-		if err != nil {
-			return err
-		}
-		if rel == "." {
-			return nil
-		}
-
-		switch {
-		case info.Mode().IsRegular():
-			return addFile(tw, path, rel, &skipped)
-		case info.Mode()&os.ModeSymlink != 0:
-			link, err := os.Readlink(path)
-			if err != nil {
-				log.Printf("skip symlink %s: %v", rel, err)
-				skipped++
-				return nil
-			}
-			return addHeader(tw, info, rel, link)
-		default: // directories and the like: header only
-			return addHeader(tw, info, rel, "")
-		}
-	})
-	if walkErr != nil {
-		tw.Close()
-		gz.Close()
-		return walkErr
-	}
-	if err := tw.Close(); err != nil {
-		return err
-	}
-	if err := gz.Close(); err != nil {
-		return err
-	}
-	if skipped > 0 {
-		log.Printf("note: skipped %d unreadable/vanished entries", skipped)
-	}
-	return f.Sync()
-}
-
-func addHeader(tw *tar.Writer, info os.FileInfo, rel, link string) error {
-	hdr, err := tar.FileInfoHeader(info, link)
-	if err != nil {
-		return err
-	}
-	hdr.Name = rel
-	if info.IsDir() {
-		hdr.Name = rel + "/"
-	}
-	return tw.WriteHeader(hdr)
-}
-
-func addFile(tw *tar.Writer, path, rel string, skipped *int) error {
-	src, err := os.Open(path)
-	if err != nil {
-		if os.IsNotExist(err) || os.IsPermission(err) {
-			log.Printf("skip %s: %v", rel, err)
-			*skipped++
-			return nil
-		}
-		return err
-	}
-	defer src.Close()
-
-	// Size the header from the open file so it matches what we copy.
-	st, err := src.Stat()
-	if err != nil {
-		return err
-	}
-	hdr, err := tar.FileInfoHeader(st, "")
-	if err != nil {
-		return err
-	}
-	hdr.Name = rel
-	if err := tw.WriteHeader(hdr); err != nil {
-		return err
-	}
-	n, err := io.Copy(tw, src)
-	if err != nil {
-		return err
-	}
-	if n != st.Size() {
-		return fmt.Errorf("%s changed during read (%d of %d bytes)", rel, n, st.Size())
+		return fmt.Errorf("%v\n%s", err, out)
 	}
 	return nil
+}
+
+// backupDatabase streams a full pg_dumpall of the Immich database straight into
+// restic (no dump file on disk). The Postgres data dir itself is excluded since a
+// file copy of a running database is not reliably restorable.
+func backupDatabase() (string, error) {
+	dump := exec.Command("docker", "exec", dbContainer, "sh", "-c",
+		`pg_dumpall --clean --if-exists --username="$POSTGRES_USER"`)
+	pr, pw := io.Pipe()
+	var dumpErr bytes.Buffer
+	dump.Stdout = pw
+	dump.Stderr = &dumpErr
+	if err := dump.Start(); err != nil {
+		return "", err
+	}
+	dumpDone := make(chan error, 1)
+	go func() {
+		err := dump.Wait()
+		pw.CloseWithError(err)
+		dumpDone <- err
+	}()
+
+	out, rerr := restic(pr, "backup", "--stdin", "--stdin-filename", "immich-db.sql",
+		"--tag", "db", "--host", "homelab")
+	pr.Close()
+	if derr := <-dumpDone; derr != nil {
+		return "", fmt.Errorf("pg_dumpall: %v: %s", derr, dumpErr.String())
+	}
+	if rerr != nil {
+		return "", fmt.Errorf("%v\n%s", rerr, out)
+	}
+	return tail(out, 4), nil
+}
+
+func restic(stdin io.Reader, args ...string) (string, error) {
+	cmd := exec.Command("restic", args...)
+	cmd.Stdin = stdin
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	cmd.Stderr = &buf
+	err := cmd.Run()
+	return buf.String(), err
+}
+
+// tail returns the last n non-empty lines of s.
+func tail(s string, n int) string {
+	lines := strings.Split(strings.TrimSpace(s), "\n")
+	if len(lines) > n {
+		lines = lines[len(lines)-n:]
+	}
+	return strings.Join(lines, "\n")
 }
 
 // sendMail talks plain SMTP to the relay (no auth, no TLS), mirroring how WUD
@@ -258,7 +243,7 @@ func sendMail(subject, body string) {
 		log.Printf("WARNING: DATA: %v", err)
 		return
 	}
-	msg := fmt.Sprintf("From: Immich Backup <%s>\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\n\r\n%s\r\n",
+	msg := fmt.Sprintf("From: Homelab Backup <%s>\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\n\r\n%s\r\n",
 		mailFrom, mailTo, subject, time.Now().Format(time.RFC1123Z), body)
 	if _, err := w.Write([]byte(msg)); err != nil {
 		log.Printf("WARNING: writing message: %v", err)
@@ -269,40 +254,4 @@ func sendMail(subject, body string) {
 		return
 	}
 	c.Quit()
-}
-
-func logProgress(path string, stop <-chan struct{}) {
-	t := time.NewTicker(30 * time.Second)
-	defer t.Stop()
-	for {
-		select {
-		case <-stop:
-			return
-		case <-t.C:
-			if s := fileSize(path); s > 0 {
-				log.Printf("... in progress: %s written", humanSize(s))
-			}
-		}
-	}
-}
-
-func fileSize(path string) int64 {
-	fi, err := os.Stat(path)
-	if err != nil {
-		return 0
-	}
-	return fi.Size()
-}
-
-func humanSize(b int64) string {
-	const unit = 1024
-	if b < unit {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %ciB", float64(b)/float64(div), "KMGTPE"[exp])
 }

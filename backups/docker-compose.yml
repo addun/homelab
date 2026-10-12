@@ -1,21 +1,24 @@
 services:
-  weekly-backup:
+  backup:
     build:
       context: .
-    container_name: weekly-backup
+    container_name: backup
     restart: unless-stopped
-    user: 1000:1000
     env_file:
       - .env
     environment:
       - TZ=Europe/Warsaw
+      - RESTIC_REPOSITORY=/repo
+      - RESTIC_CACHE_DIR=/cache
       - MAIL_HOST=mail-proxy
       - MAIL_PORT=25
       - MAIL_FROM=homelab-backup
       - MAIL_TO=${MAIL_TO}
     volumes:
-      - /home/greenserver/apps/immich/library:/source:ro
-      - /mnt/storage/backups/immich:/destination
+      - /home/greenserver/apps:/apps:ro
+      - /mnt/storage/backups/restic:/repo
+      - ./cache:/cache
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - email
 
