@@ -10,6 +10,7 @@ services:
       - TZ=Europe/Warsaw
       - RESTIC_REPOSITORY=/repo
       - RESTIC_CACHE_DIR=/cache
+      - RUN_AT=05:00
       - MAIL_HOST=mail-proxy
       - MAIL_PORT=25
       - MAIL_FROM=${MAIL_FROM}
@@ -18,7 +19,6 @@ services:
       - /home/greenserver/apps:/apps:ro
       - /mnt/storage/backups/restic:/repo
       - ./cache:/cache
-      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - email
 

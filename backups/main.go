@@ -1,16 +1,18 @@
-// Daily restic backup of the homelab: Immich database dump + the whole apps tree
-// into a deduplicated, encrypted restic repository, with retention and a
-// [OK]/[FAILED] e-mail after every run (so you also notice if the service dies).
+// Daily restic backup of the homelab: the whole apps tree into a deduplicated,
+// encrypted restic repository, with retention and a [OK]/[FAILED] e-mail after
+// every run (so you also notice if the service dies).
+//
+// The Immich database is not dumped here: Immich writes its own daily dump to
+// immich/library/backups (04:00 local), so RUN_AT must stay after that.
 //
 // Self-contained scheduler: the process stays alive and wakes up every day at
-// RUN_AT (default 03:00) in TZ. Run "backup once" to perform a single backup now.
+// RUN_AT (default 05:00) in TZ. Run "backup once" to perform a single backup now.
 package main
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/smtp"
@@ -21,18 +23,18 @@ import (
 )
 
 var (
-	sourceDir   = env("SOURCE_DIR", "/apps")
-	mailHost    = env("MAIL_HOST", "mail-proxy")
-	mailPort    = env("MAIL_PORT", "25")
-	mailFrom    = env("MAIL_FROM", "homelab-backup")
-	mailTo      = env("MAIL_TO", "")
-	tz          = env("TZ", "UTC")
-	runAt       = env("RUN_AT", "03:00")
-	dbContainer = env("DB_CONTAINER", "immich_postgres")
+	sourceDir = env("SOURCE_DIR", "/apps")
+	mailHost  = env("MAIL_HOST", "mail-proxy")
+	mailPort  = env("MAIL_PORT", "25")
+	mailFrom  = env("MAIL_FROM", "homelab-backup")
+	mailTo    = env("MAIL_TO", "")
+	tz        = env("TZ", "UTC")
+	runAt     = env("RUN_AT", "05:00")
 )
 
 // Paths (relative to sourceDir) that are not worth backing up: raw Postgres files
-// (covered by the dump instead), caches and regenerable metrics/index data.
+// (a file copy of a running database is not restorable; Immich's own dump in
+// immich/library/backups covers it), caches and regenerable metrics/index data.
 var excludes = []string{
 	"immich/postgres",
 	"immich/deduper/cache",
@@ -105,19 +107,12 @@ func runBackup() {
 		return
 	}
 
-	if out, err := backupDatabase(); err != nil {
-		fail("database dump", err)
-		return
-	} else {
-		report.WriteString("== database ==\n" + out + "\n")
-	}
-
 	// Exit code 3 = snapshot created but some files unreadable; treat as a warning.
 	args := []string{"backup", sourceDir, "--tag", "files", "--host", "homelab"}
 	for _, e := range excludes {
 		args = append(args, "--exclude", sourceDir+"/"+e)
 	}
-	out, err := restic(nil, args...)
+	out, err := restic(args...)
 	var ee *exec.ExitError
 	if err != nil && !(errors.As(err, &ee) && ee.ExitCode() == 3) {
 		fail("files backup", fmt.Errorf("%v\n%s", err, out))
@@ -129,7 +124,7 @@ func runBackup() {
 	}
 	report.WriteString("== files ==\n" + warn + tail(out, 8) + "\n")
 
-	if out, err := restic(nil, "forget", "--prune", "--host", "homelab",
+	if out, err := restic("forget", "--prune", "--host", "homelab",
 		"--keep-daily", "7", "--keep-weekly", "4", "--keep-monthly", "6"); err != nil {
 		fail("retention", fmt.Errorf("%v\n%s", err, out))
 		return
@@ -138,7 +133,7 @@ func runBackup() {
 	}
 
 	// Structure check plus a random 2% sample of the actual data each run.
-	if out, err := restic(nil, "check", "--read-data-subset=2%"); err != nil {
+	if out, err := restic("check", "--read-data-subset=2%"); err != nil {
 		fail("integrity check", fmt.Errorf("%v\n%s", err, out))
 		return
 	}
@@ -151,52 +146,19 @@ func runBackup() {
 
 // ensureRepo initialises the restic repository on first run.
 func ensureRepo() error {
-	if _, err := restic(nil, "cat", "config"); err == nil {
+	if _, err := restic("cat", "config"); err == nil {
 		return nil
 	}
 	log.Println("Initialising restic repository")
-	out, err := restic(nil, "init")
+	out, err := restic("init")
 	if err != nil {
 		return fmt.Errorf("%v\n%s", err, out)
 	}
 	return nil
 }
 
-// backupDatabase streams a full pg_dumpall of the Immich database straight into
-// restic (no dump file on disk). The Postgres data dir itself is excluded since a
-// file copy of a running database is not reliably restorable.
-func backupDatabase() (string, error) {
-	dump := exec.Command("docker", "exec", dbContainer, "sh", "-c",
-		`pg_dumpall --clean --if-exists --username="$POSTGRES_USER"`)
-	pr, pw := io.Pipe()
-	var dumpErr bytes.Buffer
-	dump.Stdout = pw
-	dump.Stderr = &dumpErr
-	if err := dump.Start(); err != nil {
-		return "", err
-	}
-	dumpDone := make(chan error, 1)
-	go func() {
-		err := dump.Wait()
-		pw.CloseWithError(err)
-		dumpDone <- err
-	}()
-
-	out, rerr := restic(pr, "backup", "--stdin", "--stdin-filename", "immich-db.sql",
-		"--tag", "db", "--host", "homelab")
-	pr.Close()
-	if derr := <-dumpDone; derr != nil {
-		return "", fmt.Errorf("pg_dumpall: %v: %s", derr, dumpErr.String())
-	}
-	if rerr != nil {
-		return "", fmt.Errorf("%v\n%s", rerr, out)
-	}
-	return tail(out, 4), nil
-}
-
-func restic(stdin io.Reader, args ...string) (string, error) {
+func restic(args ...string) (string, error) {
 	cmd := exec.Command("restic", args...)
-	cmd.Stdin = stdin
 	var buf bytes.Buffer
 	cmd.Stdout = &buf
 	cmd.Stderr = &buf
