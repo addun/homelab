@@ -12,7 +12,7 @@ services:
       - RESTIC_CACHE_DIR=/cache
       - MAIL_HOST=mail-proxy
       - MAIL_PORT=25
-      - MAIL_FROM=homelab-backup
+      - MAIL_FROM=${MAIL_FROM}
       - MAIL_TO=${MAIL_TO}
     volumes:
       - /home/greenserver/apps:/apps:ro
