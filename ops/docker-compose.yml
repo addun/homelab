@@ -1,7 +1,7 @@
 services:
   portainer:
     container_name: portainer
-    image: portainer/portainer-ce:2.42.0-alpine
+    image: portainer/portainer-ce:2.45.3-alpine
     labels:
       # Only track the -alpine variant; ignore plain tags like 2.42.0.
       - wud.tag.include=^\d+\.\d+\.\d+-alpine$$
@@ -25,6 +25,8 @@ services:
     environment:
       - TZ=Europe/Warsaw
       - WUD_WATCHER_LOCAL_CRON=0 6 * * *
+      - WUD_AUTH_ADMIN_USER=${WUD_ADMIN_USER}
+      - WUD_AUTH_ADMIN_PASSWORD=${WUD_ADMIN_PASSWORD}
       - WUD_TRIGGER_SMTP_MAIL_HOST=mail-proxy
       - WUD_TRIGGER_SMTP_MAIL_PORT=25
       - WUD_TRIGGER_SMTP_MAIL_FROM_ADDRESS=${WUD_FROM_ADDRESS}

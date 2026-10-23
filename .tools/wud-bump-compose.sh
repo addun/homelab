@@ -26,6 +26,8 @@
 # Env:
 #   WUD_URL   Base URL of the WUD API. Default: auto-detected from the `wud`
 #             container's IP on its Docker network, port 3000.
+#   WUD_USER / WUD_PASS   Basic-auth credentials. Default: WUD_ADMIN_USER /
+#             WUD_ADMIN_PASSWORD from ops/.env.
 
 set -euo pipefail
 
@@ -35,7 +37,7 @@ for arg in "$@"; do
   case "$arg" in
     -n|--dry-run) DRY_RUN=1 ;;
     -y|--yes)     ASSUME_YES=1 ;;
-    -h|--help)    sed -n '2,33p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)    sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $arg (try --help)" >&2; exit 2 ;;
   esac
 done
@@ -55,8 +57,16 @@ if [ -z "$WUD_URL" ]; then
   WUD_URL="http://${ip}:3000"
 fi
 
+# WUD >= 9 requires auth; default to the admin credentials from ops/.env.
+ENV_FILE="$ROOT/ops/.env"
+envval() { [ -f "$ENV_FILE" ] && sed -n "s/^$1=//p" "$ENV_FILE" | tail -n1; }
+WUD_USER="${WUD_USER:-$(envval WUD_ADMIN_USER)}"
+WUD_PASS="${WUD_PASS:-$(envval WUD_ADMIN_PASSWORD)}"
+CURL_AUTH=()
+[ -n "$WUD_USER" ] && CURL_AUTH=(-u "${WUD_USER}:${WUD_PASS}")
+
 echo "🔎 Querying WUD at ${WUD_URL} ..."
-containers="$(curl -fsS --max-time 10 "${WUD_URL}/api/containers")" \
+containers="$(curl -fsS --max-time 10 "${CURL_AUTH[@]}" "${WUD_URL}/api/containers")" \
   || { echo "❌ Failed to reach the WUD API at ${WUD_URL}" >&2; exit 1; }
 
 # --- Collect tag updates ---------------------------------------------------

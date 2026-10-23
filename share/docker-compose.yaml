@@ -3,6 +3,8 @@ services:
     image: smp46/pingvin-share-x:v1.22.1
     container_name: pingvin-share-x
     restart: unless-stopped
+    labels:
+      - wud.tag.include=^v\d+\.\d+\.\d+$$
     environment:
       - TRUST_PROXY=true
     volumes:
