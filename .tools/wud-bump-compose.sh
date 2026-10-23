@@ -227,8 +227,7 @@ if [ -n "$applied" ]; then
   echo "🚀 To pull and redeploy the updated services:"
   while IFS=$'\t' read -r file service; do
     [ -n "$file" ] || continue
-    echo "   docker compose -f \"$file\" pull $service \\"
-    echo "   && docker compose -f \"$file\" up -d $service"
+    echo "   docker compose -f \"$file\" up -d --pull always $service"
   done <<< "$applied"
   echo
   echo "Review first with:  git -C \"$ROOT\" diff -- '*docker-compose*'"

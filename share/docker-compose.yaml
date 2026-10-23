@@ -1,6 +1,6 @@
 services:
   pingvin-share-x:
-    image: smp46/pingvin-share-x:v1.22.1
+    image: smp46/pingvin-share-x:v2.0.0
     container_name: pingvin-share-x
     restart: unless-stopped
     labels:
