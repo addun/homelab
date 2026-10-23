@@ -46,7 +46,7 @@ command -v jq   >/dev/null || { echo "❌ 'jq' is required."   >&2; exit 1; }
 command -v perl >/dev/null || { echo "❌ 'perl' is required." >&2; exit 1; }
 
 # Show compose paths relative to the repo root when possible (purely cosmetic).
-ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null || echo /home/greenserver/apps)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 rel() { case "$1" in "$ROOT"/*) printf '%s' "${1#"$ROOT"/}" ;; *) printf '%s' "$1" ;; esac; }
 
 # --- Resolve the WUD API endpoint -----------------------------------------

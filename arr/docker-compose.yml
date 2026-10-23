@@ -130,7 +130,7 @@ services:
       - reverse-proxy
 
   transmission-internal:
-    image: lscr.io/linuxserver/transmission:4.1.1
+    image: lscr.io/linuxserver/transmission:4.1.3
     container_name: transmission
     network_mode: "service:transmission"
     environment:
