@@ -1,6 +1,6 @@
 services:
   jellyfin:
-    image: ghcr.io/jellyfin/jellyfin:10.11.11
+    image: ghcr.io/jellyfin/jellyfin:12.3
     container_name: jellyfin
     environment:
       - PUID=1000
@@ -14,6 +14,8 @@ services:
       - ./jellyfin/config:/config
       - ./jellyfin/cache:/cache
       - /mnt/storage/media:/media
+    labels:
+      - wud.tag.include=^\d+\.\d+$$
     restart: unless-stopped
     networks:
       - arr
