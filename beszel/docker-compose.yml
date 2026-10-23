@@ -1,6 +1,6 @@
 services:
   beszel:
-    image: henrygd/beszel:0.18.7
+    image: henrygd/beszel:0.21.1
     container_name: beszel
     environment:
       - PUID=1000
@@ -14,7 +14,7 @@ services:
       - beszel
 
   beszel-agent:
-    image: henrygd/beszel-agent-intel:0.18.7
+    image: henrygd/beszel-agent-intel:0.21.1
     cap_add:
       - CAP_PERFMON
     container_name: beszel-agent

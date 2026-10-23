@@ -17,7 +17,7 @@ services:
 
   wud:
     container_name: wud
-    image: getwud/wud:8.2.2
+    image: getwud/wud:9.5.0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./wud/store:/store
