@@ -1,7 +1,7 @@
 services:
   backup:
     build:
-      context: .
+      context: ./app
     container_name: backup
     restart: unless-stopped
     env_file:
@@ -18,6 +18,7 @@ services:
     volumes:
       - /home/greenserver/apps:/apps:ro
       - /mnt/storage/backups/restic:/repo
+      - /mnt/storage/backups/restore-test:/restore
       - ./cache:/cache
     networks:
       - email

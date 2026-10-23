@@ -7,6 +7,9 @@
 //
 // Self-contained scheduler: the process stays alive and wakes up every day at
 // RUN_AT (default 05:00) in TZ. Run "backup once" to perform a single backup now.
+//
+// On the 1st of every month, right after the backup, a restore drill runs (see
+// drill.go); "backup drill" runs it on demand.
 package main
 
 import (
@@ -19,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -62,9 +66,15 @@ func main() {
 		log.Fatal("RESTIC_PASSWORD is not set")
 	}
 
-	if len(os.Args) > 1 && os.Args[1] == "once" {
-		runBackup()
-		return
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "once":
+			runBackup()
+			return
+		case "drill":
+			runDrill()
+			return
+		}
 	}
 
 	loc, err := time.LoadLocation(tz)
@@ -87,13 +97,28 @@ func main() {
 		log.Printf("Next backup: %s (in %s)", next.Format(time.RFC1123), next.Sub(now).Truncate(time.Minute))
 		time.Sleep(next.Sub(now))
 		runBackup()
+		if time.Now().In(loc).Day() == 1 {
+			runDrill()
+		}
 	}
 }
 
 func runBackup() {
 	start := time.Now()
 	day := start.Format("2006-01-02")
-	log.Println("Backup started")
+	log.Printf("Backup started (pid=%d ppid=%d)", os.Getpid(), os.Getppid())
+
+	// Two runs at once (e.g. the scheduler plus "docker exec backup backup once")
+	// fight over restic's exclusive prune lock, so the second one skips.
+	lock, err := os.OpenFile("/cache/backup.lock", os.O_CREATE|os.O_RDWR, 0o600)
+	if err == nil {
+		defer lock.Close()
+		err = syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+	}
+	if err != nil {
+		log.Printf("another backup is already running, skipping: %v", err)
+		return
+	}
 
 	var report strings.Builder
 	fail := func(step string, err error) {

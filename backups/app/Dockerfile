@@ -1,7 +1,7 @@
 FROM golang:1.23-alpine AS build
 WORKDIR /src
 COPY go.mod ./
-COPY main.go ./
+COPY *.go ./
 RUN CGO_ENABLED=0 go build -trimpath -o /backup .
 
 FROM alpine:3.22
