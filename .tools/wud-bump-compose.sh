@@ -17,9 +17,11 @@
 # edited but not redeployed), that container is reported and skipped — never guessed.
 #
 # Usage:
-#   ./wud-bump-compose.sh              # preview, then ask before writing
+#   ./wud-bump-compose.sh              # preview, then pick which updates to apply
+#                                      #   checkbox list (whiptail) in a terminal; otherwise
+#                                      #   a prompt: "1,3", "2-4", "a" = all, Enter = none
 #   ./wud-bump-compose.sh --dry-run    # preview only, never write
-#   ./wud-bump-compose.sh --yes        # apply without prompting
+#   ./wud-bump-compose.sh --yes        # apply all without prompting
 #
 # Env:
 #   WUD_URL   Base URL of the WUD API. Default: auto-detected from the `wud`
@@ -105,11 +107,13 @@ done <<< "$updates"
 # --- Preview ---------------------------------------------------------------
 echo
 echo "📦 Updates available:"
-printf '   %-22s %-34s %s\n' "CONTAINER" "FILE" "CHANGE"
+printf '   %3s  %-22s %-34s %s\n' "#" "CONTAINER" "FILE" "CHANGE"
 if [ -n "$PLAN" ]; then
+  i=0
   while IFS=$'\t' read -r file service base old new name; do
     [ -n "$name" ] || continue
-    printf '   %-22s %-34s %s\n' "$name" "$(rel "$file")" "${base}:${old}  →  ${base}:${new}"
+    i=$((i + 1))
+    printf '   %3d  %-22s %-34s %s\n' "$i" "$name" "$(rel "$file")" "${base}:${old}  →  ${base}:${new}"
   done <<< "$PLAN"
 fi
 if [ -n "$WARN" ]; then
@@ -134,8 +138,60 @@ fi
 
 if [ "$ASSUME_YES" -ne 1 ]; then
   echo
-  read -r -p "Apply these ${count} update(s) to the compose files? [y/N] " reply
-  case "$reply" in [yY]|[yY][eE][sS]) ;; *) echo "Aborted."; exit 0 ;; esac
+  reply=""
+  if command -v whiptail >/dev/null && [ -t 0 ] && [ -t 1 ]; then
+    # Checkbox UI: SPACE toggles, A-Z jumps, ENTER confirms, ESC cancels.
+    items=()
+    i=0
+    while IFS=$'\t' read -r file service base old new name; do
+      [ -n "$name" ] || continue
+      i=$((i + 1))
+      items+=("$i" "${name}  ${base}:${old} → ${new}" OFF)
+    done <<< "$PLAN"
+    # Calm dark theme instead of whiptail's default magenta; override with your own NEWT_COLORS.
+    export NEWT_COLORS="${NEWT_COLORS:-root=,black window=white,black border=white,black shadow=,black title=white,black roottext=white,black helpline=white,black label=white,black textbox=white,black acttextbox=white,black button=black,white actbutton=white,blue checkbox=white,black actcheckbox=black,cyan listbox=white,black actlistbox=white,blue sellistbox=cyan,black actsellistbox=white,blue}"
+    rows="$(tput lines 2>/dev/null || echo 24)"
+    cols="$(tput cols 2>/dev/null || echo 80)"
+    h=$((rows - 4)); w=$((cols - 6))
+    picked="$(whiptail --title "WUD updates" --separate-output --checklist \
+      "SPACE = toggle, ENTER = apply selected, ESC = cancel" \
+      "$h" "$w" $((h - 8)) "${items[@]}" 3>&1 1>&2 2>&3)" || { echo "Aborted."; exit 0; }
+    [ -n "$picked" ] || { echo "Nothing selected."; exit 0; }
+    reply="$(printf '%s' "$picked" | paste -sd, -)"
+  else
+    read -r -p "Which update(s) to apply? [numbers e.g. 1,3 or 2-4 | a=all | N=none]: " reply
+  fi
+  reply="${reply// /}"
+  case "$reply" in
+    a|A|all|ALL) ;;
+    ""|n|N|none) echo "Aborted."; exit 0 ;;
+    *)
+      selected=","
+      IFS=',' read -ra parts <<< "$reply"
+      for p in "${parts[@]}"; do
+        if [[ "$p" =~ ^[0-9]+$ ]]; then
+          from="$p"; to="$p"
+        elif [[ "$p" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+          from="${BASH_REMATCH[1]}"; to="${BASH_REMATCH[2]}"
+        else
+          echo "❌ Invalid selection: '$p'" >&2; exit 2
+        fi
+        if [ "$from" -lt 1 ] || [ "$to" -gt "$count" ] || [ "$from" -gt "$to" ]; then
+          echo "❌ Selection '$p' out of range (1-${count})" >&2; exit 2
+        fi
+        for ((n = from; n <= to; n++)); do selected+="${n},"; done
+      done
+
+      filtered=""
+      i=0
+      while IFS= read -r row; do
+        [ -n "$row" ] || continue
+        i=$((i + 1))
+        case "$selected" in *",${i},"*) filtered+="${row}"$'\n' ;; esac
+      done <<< "$PLAN"
+      PLAN="$filtered"
+      ;;
+  esac
 fi
 
 echo
