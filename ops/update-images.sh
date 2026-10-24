@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# wud-bump-compose.sh — bump image tags in docker-compose files to the versions
+# update-images.sh — bump image tags in docker-compose files to the versions
 #                       WUD reports as available.
 #
 # WUD only DETECTS updates; it never edits files or redeploys. This script reads
@@ -17,11 +17,11 @@
 # edited but not redeployed), that container is reported and skipped — never guessed.
 #
 # Usage:
-#   ./wud-bump-compose.sh              # preview, then pick which updates to apply
+#   ./update-images.sh              # preview, then pick which updates to apply
 #                                      #   checkbox list (whiptail) in a terminal; otherwise
 #                                      #   a prompt: "1,3", "2-4", "a" = all, Enter = none
-#   ./wud-bump-compose.sh --dry-run    # preview only, never write
-#   ./wud-bump-compose.sh --yes        # apply all without prompting
+#   ./update-images.sh --dry-run    # preview only, never write
+#   ./update-images.sh --yes        # apply all without prompting
 #
 # Env:
 #   WUD_URL   Base URL of the WUD API. Default: auto-detected from the `wud`

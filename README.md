@@ -32,5 +32,3 @@ Infrastructure-as-code for my home server: a collection of Docker Compose stacks
 | Ops                 | Portainer, WUD                                                                                  |
 | Dashboard           | Homepage                                                                                        |
 | Misc                | Postfix relay (email), Netflix household auto-validator                                         |
-
-`.tools/` contains helper scripts for managing the VPS tunnel and bumping compose image tags.
