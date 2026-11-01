@@ -57,7 +57,7 @@ services:
 
   prowlarr:
     container_name: prowlarr
-    image: ghcr.io/hotio/prowlarr:release-2.6.5.5623
+    image: ghcr.io/hotio/prowlarr:release-2.7.0.5723
     environment:
       - PUID=1000
       - PGID=1000
@@ -132,7 +132,7 @@ services:
       - reverse-proxy
 
   transmission-internal:
-    image: lscr.io/linuxserver/transmission:4.1.3
+    image: lscr.io/linuxserver/transmission:4.1.4
     container_name: transmission
     network_mode: "service:transmission"
     environment:
