@@ -151,12 +151,23 @@ if [ "$ASSUME_YES" -ne 1 ]; then
   reply=""
   if command -v whiptail >/dev/null && [ -t 0 ] && [ -t 1 ]; then
     # Checkbox UI: SPACE toggles, A-Z jumps, ENTER confirms, ESC cancels.
+    # Pad name and image so the arrows line up (widths from the longest entry).
+    nw=9; bw=5; ow=3   # minimum widths = header labels
+    while IFS=$'\t' read -r file service base old new name; do
+      [ -n "$name" ] || continue
+      [ "${#name}" -gt "$nw" ] && nw=${#name}
+      [ "${#base}" -gt "$bw" ] && bw=${#base}
+      [ "${#old}" -gt "$ow" ] && ow=${#old}
+    done <<< "$PLAN"
+    # Column header goes into the dialog text, offset to sit above the item labels
+    # (checkbox "[ ] " + index column + gap).
+    header="$(printf '%-*s  %-*s  %-*s     %s' "$nw" "CONTAINER" "$bw" "IMAGE" "$ow" "OLD" "NEW")"
     items=()
     i=0
     while IFS=$'\t' read -r file service base old new name; do
       [ -n "$name" ] || continue
       i=$((i + 1))
-      items+=("$i" "${name}  ${base}:${old} → ${new}" OFF)
+      items+=("$i" "$(printf '%-*s  %-*s  %-*s  →  %s' "$nw" "$name" "$bw" "$base" "$ow" "$old" "$new")" OFF)
     done <<< "$PLAN"
     # Calm dark theme instead of whiptail's default magenta; override with your own NEWT_COLORS.
     export NEWT_COLORS="${NEWT_COLORS:-root=,black window=white,black border=white,black shadow=,black title=white,black roottext=white,black helpline=white,black label=white,black textbox=white,black acttextbox=white,black button=black,white actbutton=white,blue checkbox=white,black actcheckbox=black,cyan listbox=white,black actlistbox=white,blue sellistbox=cyan,black actsellistbox=white,blue}"
@@ -164,8 +175,8 @@ if [ "$ASSUME_YES" -ne 1 ]; then
     cols="$(tput cols 2>/dev/null || echo 80)"
     h=$((rows - 4)); w=$((cols - 6))
     picked="$(whiptail --title "WUD updates" --separate-output --checklist \
-      "SPACE = toggle, ENTER = apply selected, ESC = cancel" \
-      "$h" "$w" $((h - 8)) "${items[@]}" 3>&1 1>&2 2>&3)" || { echo "Aborted."; exit 0; }
+      "SPACE = toggle, ENTER = apply selected, ESC = cancel"$'\n\n'"         ${header}" \
+      "$h" "$w" $((h - 10)) "${items[@]}" 3>&1 1>&2 2>&3)" || { echo "Aborted."; exit 0; }
     [ -n "$picked" ] || { echo "Nothing selected."; exit 0; }
     reply="$(printf '%s' "$picked" | paste -sd, -)"
   else

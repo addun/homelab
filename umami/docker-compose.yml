@@ -1,0 +1,40 @@
+services:
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-v2.19.0
+    container_name: umami
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://umami:${POSTGRES_PASSWORD}@umami-db:5432/umami
+      APP_SECRET: ${APP_SECRET}
+      DISABLE_TELEMETRY: 1
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    networks:
+      - reverse-proxy
+      - umami
+
+  umami-db:
+    image: postgres:17-alpine
+    container_name: umami-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umami -d umami"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - umami
+
+networks:
+  umami:
+    driver: bridge
+  reverse-proxy:
+    name: reverse-proxy
+    external: true

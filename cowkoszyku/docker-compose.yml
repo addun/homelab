@@ -1,0 +1,46 @@
+# Production stack for cowkoszyku (app source lives in ./repo, a separate clone of addun/bulky).
+# Update with ./update.sh. Config/secrets come from .env; healthchecks and defaults live in the Dockerfiles.
+
+name: cowkoszyku
+
+services:
+  nginx:
+    container_name: cowkoszyku
+    image: nginx:1.31-trixie-perl
+    restart: unless-stopped
+    volumes:
+      - ./repo/deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    networks:
+      - default
+      - reverse-proxy
+
+  api:
+    container_name: cowkoszyku_api
+    build:
+      context: ./repo
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+
+  web:
+    container_name: cowkoszyku_web
+    build:
+      context: ./repo
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      api:
+        condition: service_healthy
+
+networks:
+  reverse-proxy:
+    name: reverse-proxy
+    external: true
