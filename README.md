@@ -26,7 +26,7 @@ Infrastructure-as-code for my home server: a collection of Docker Compose stacks
 | ------------------- | ----------------------------------------------------------------------------------------------- |
 | Media               | Jellyfin, Radarr, Sonarr, Prowlarr, FlareSolverr, Seerr, Huntarr, Transmission (over WireGuard) |
 | Photos              | Immich                                                                                          |
-| Smart Home          | Home Assistant, Zigbee2MQTT, ESPHome, ebusd (boiler/heating bus)                                |
+| Smart Home          | Home Assistant, Zigbee2MQTT, ESPHome, ebusd (boiler/heating bus), go2rtc (camera streams)       |
 | Networking/Security | Caddy, Authelia, CrowdSec, AdGuard Home                                                         |
 | Monitoring          | Prometheus, Grafana, Loki, Alloy, Uptime Kuma, Beszel                                           |
 | Ops                 | Portainer, WUD                                                                                  |

@@ -3,3 +3,4 @@ home-assistant/media
 mosquitto
 zigbee2mqtt/data
 esphome/config
+go2rtc

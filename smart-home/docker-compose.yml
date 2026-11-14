@@ -20,6 +20,24 @@ services:
     privileged: true
     network_mode: host
 
+  go2rtc:
+    container_name: go2rtc
+    image: alexxit/go2rtc:1.9.9
+    labels:
+      # Stable X.Y.Z only; skip master/latest/hardware variants.
+      - wud.tag.include=^\d+\.\d+\.\d+$$
+    restart: unless-stopped
+    ports:
+      - "8555:8555/tcp"
+      - "8555:8555/udp"
+    environment:
+      - TAPO_CLOUD_PASSWORD=${TAPO_CLOUD_PASSWORD}
+    volumes:
+      - ./go2rtc:/config
+    networks:
+      - assistant
+      - reverse-proxy
+
   mosquitto:
     image: eclipse-mosquitto:2.1.2-alpine
     labels:
