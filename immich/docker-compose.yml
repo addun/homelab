@@ -70,7 +70,7 @@ services:
 
   immich-deduper:
     container_name: immich-deduper
-    image: razgrizhsu/immich-deduper:0.3.5
+    image: razgrizhsu/immich-deduper:0.3.6
     env_file:
       - .env
     environment:
@@ -93,7 +93,7 @@ services:
 
   immich-deduper-qdrant:
     container_name: immich-deduper-qdrant
-    image: qdrant/qdrant:v1.20.0
+    image: qdrant/qdrant:v1.20.1
     restart: unless-stopped
     volumes:
       - ./deduper/qdrant:/qdrant/storage

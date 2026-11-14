@@ -1,6 +1,6 @@
 services:
   jellyfin:
-    image: ghcr.io/jellyfin/jellyfin:12.3
+    image: ghcr.io/jellyfin/jellyfin:12.4
     container_name: jellyfin
     environment:
       - PUID=1000
@@ -81,7 +81,7 @@ services:
       - reverse-proxy
 
   seerr:
-    image: ghcr.io/seerr-team/seerr:v3.5.1
+    image: ghcr.io/seerr-team/seerr:v3.5.2
     container_name: seerr
     environment:
       - PUID=1000
